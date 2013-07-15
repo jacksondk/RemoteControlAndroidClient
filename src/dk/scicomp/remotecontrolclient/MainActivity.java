@@ -16,6 +16,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import dk.scicomp.remotecontrolclient.DownloadSetup.IDownloadComplete;
@@ -34,11 +36,15 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public class MainActivity extends FragmentActivity implements
 		ActionBar.OnNavigationListener,
-		IDownloadComplete {
+		IDownloadComplete,
+		View.OnClickListener {
 
 	/**
 	 * The serialization (saved instance state) Bundle key representing the
@@ -79,6 +85,12 @@ public class MainActivity extends FragmentActivity implements
 	
 	public void sendMessage(View view) {
 		Log.e("Msg", Integer.toBinaryString(view.getId()));
+		Object tag = view.getTag();
+		if (tag != null){
+			
+		}
+			
+		
 		switch (view.getId()) {
 		case R.id.nextButton:
 			publish("next");
@@ -131,8 +143,7 @@ public class MainActivity extends FragmentActivity implements
 
 	@Override
 	public boolean onNavigationItemSelected(int position, long id) {
-		// When the given dropdown item is selected, show its contents in the
-		// container view.
+		
 		if (position == 0) {
 			Fragment frag = new SoundSectionFragment();
 			getSupportFragmentManager().beginTransaction()
@@ -140,12 +151,23 @@ public class MainActivity extends FragmentActivity implements
 			return true;
 		}
 
-		Fragment fragment = new DummySectionFragment();
-		Bundle args = new Bundle();
-		args.putInt(DummySectionFragment.ARG_SECTION_NUMBER, position + 1);
-		fragment.setArguments(args);
-		getSupportFragmentManager().beginTransaction()
-				.replace(R.id.container, fragment).commit();
+		
+		FrameLayout layout = (FrameLayout) findViewById(R.id.container);
+		LinearLayout list = new LinearLayout(this);
+		layout.removeAllViewsInLayout();
+		if (commandNodes != null){
+		for(int index = 0; index < commandNodes.getLength(); index++){
+			String text = commandNodes.item(index).getChildNodes().item(0).getNodeValue();
+			Log.d("mainview", "Button " + text);
+			Button commandButton = new Button(this);
+			commandButton.setText(text);
+			commandButton.setTag(commandNodes.item(index));
+			commandButton.setOnClickListener(this);
+			list.addView(commandButton);
+		}
+		layout.addView(list);
+		}
+		
 		return true;
 	}
 
@@ -166,6 +188,8 @@ public class MainActivity extends FragmentActivity implements
 		@Override
 		public View onCreateView(LayoutInflater inflater, ViewGroup container,
 				Bundle savedInstanceState) {
+			
+			
 			View rootView = inflater.inflate(R.layout.fragment_main_dummy,
 					container, false);
 			TextView dummyTextView = (TextView) rootView
@@ -191,9 +215,26 @@ public class MainActivity extends FragmentActivity implements
 
 	}
 
+	NodeList commandNodes;
+	
 	@Override
 	public void DownloadIsComplete(Document doc) {
-		Log.d("mainview", "Download " + doc.toString());		
+		Log.d("mainview", "Download " + doc.toString());
+		commandNodes = doc.getElementsByTagName("command");
+		
+		for(int index = 0; index < commandNodes.getLength(); index++){
+			Log.d("mainview", "Command " + commandNodes.item(index).getChildNodes().item(0).getNodeValue());		
+		}
+	}
+
+	@Override
+	public void onClick(View v) {
+		Object tag = v.getTag();
+		if (tag instanceof Node){
+			Node tagNode = (Node) tag;
+			String cmd = tagNode.getAttributes().getNamedItem("cmd").getNodeValue();
+			publish(cmd);
+		}
 	}
 
 }

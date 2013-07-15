@@ -31,6 +31,7 @@ public class UdpPacketSender extends AsyncTask<String, Void, Boolean> {
 			for( String value : messages){
 				byte[] bytes = value.getBytes();
 				DatagramPacket packet = new DatagramPacket(bytes, bytes.length,dest,50000);
+				Log.d("UDP Send", value);
 				socket.send(packet);
 			}
 		}
