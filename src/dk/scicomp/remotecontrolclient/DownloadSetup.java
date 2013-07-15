@@ -19,9 +19,15 @@ import android.util.Log;
 public class DownloadSetup extends AsyncTask<URL, Void, Boolean>{
 
 	private Document doc;
+	private IDownloadComplete _callback;
 	
-	public DownloadSetup(){
-		
+	public interface IDownloadComplete {
+		void DownloadIsComplete(Document doc);
+	}
+	
+	
+	public DownloadSetup(IDownloadComplete callback){
+		_callback = callback;
 	}
 	
 	@Override
@@ -69,6 +75,10 @@ public class DownloadSetup extends AsyncTask<URL, Void, Boolean>{
 
 	protected void onPostExecute(Boolean result)
 	{
+		if (_callback != null)
+		{
+			_callback.DownloadIsComplete(doc);
+		}
 	}
 	
 }

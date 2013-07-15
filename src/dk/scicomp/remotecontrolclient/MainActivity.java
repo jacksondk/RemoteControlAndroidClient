@@ -18,6 +18,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import dk.scicomp.remotecontrolclient.DownloadSetup.IDownloadComplete;
+
 import android.app.ActionBar;
 import android.os.Bundle;
 
@@ -35,7 +37,8 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 public class MainActivity extends FragmentActivity implements
-		ActionBar.OnNavigationListener {
+		ActionBar.OnNavigationListener,
+		IDownloadComplete {
 
 	/**
 	 * The serialization (saved instance state) Bundle key representing the
@@ -48,7 +51,8 @@ public class MainActivity extends FragmentActivity implements
 		super.onCreate(savedInstanceState);
 
 		try {
-			new DownloadSetup().execute(new URL[] { new URL("http://192.168.0.25:50004/")});
+			new DownloadSetup(this).
+				execute(new URL[] { new URL("http://192.168.0.25:50004/")});
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -185,6 +189,11 @@ public class MainActivity extends FragmentActivity implements
 			return rootView;
 		}
 
+	}
+
+	@Override
+	public void DownloadIsComplete(Document doc) {
+		Log.d("mainview", "Download " + doc.toString());		
 	}
 
 }
