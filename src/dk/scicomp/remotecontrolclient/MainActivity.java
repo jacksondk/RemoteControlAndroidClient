@@ -83,7 +83,7 @@ public class MainActivity extends FragmentActivity implements ActionBar.OnNaviga
 	}
 	    
     private void publish(String value){
-    	new UdpPacketSender().execute(new String[] {value});    	
+    	new UdpPacketSender("192.168.0.25").execute(new String[] {value});    	
     }
 
     @Override
