@@ -10,12 +10,15 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -42,9 +45,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public class MainActivity extends FragmentActivity implements
-		ActionBar.OnNavigationListener,
-		IDownloadComplete,
-		View.OnClickListener {
+		ActionBar.OnNavigationListener, IDownloadComplete, View.OnClickListener {
 
 	/**
 	 * The serialization (saved instance state) Bundle key representing the
@@ -57,8 +58,8 @@ public class MainActivity extends FragmentActivity implements
 		super.onCreate(savedInstanceState);
 
 		try {
-			new DownloadSetup(this).
-				execute(new URL[] { new URL("http://192.168.0.25:50004/")});
+			new DownloadSetup(this).execute(new URL[] { new URL(
+					"http://192.168.0.25:50004/") });
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -82,15 +83,14 @@ public class MainActivity extends FragmentActivity implements
 								getString(R.string.title_section2),
 								getString(R.string.title_section3), }), this);
 	}
-	
+
 	public void sendMessage(View view) {
 		Log.e("Msg", Integer.toBinaryString(view.getId()));
 		Object tag = view.getTag();
-		if (tag != null){
-			
+		if (tag != null) {
+
 		}
-			
-		
+
 		switch (view.getId()) {
 		case R.id.nextButton:
 			publish("next");
@@ -143,31 +143,33 @@ public class MainActivity extends FragmentActivity implements
 
 	@Override
 	public boolean onNavigationItemSelected(int position, long id) {
-		
-		if (position == 0) {
-			Fragment frag = new SoundSectionFragment();
-			getSupportFragmentManager().beginTransaction()
-					.replace(R.id.container, frag).commit();
-			return true;
-		}
 
-		
+		if (commandModules == null)
+			return true;
+
+		CommandModule selectedModule = commandModules.get(position);
+
 		FrameLayout layout = (FrameLayout) findViewById(R.id.container);
 		LinearLayout list = new LinearLayout(this);
 		layout.removeAllViewsInLayout();
-		if (commandNodes != null){
-		for(int index = 0; index < commandNodes.getLength(); index++){
-			String text = commandNodes.item(index).getChildNodes().item(0).getNodeValue();
-			Log.d("mainview", "Button " + text);
+
+		List<Command> commands = selectedModule.getCommands();
+		for (int index = 0; index < commands.size(); index++) {
+			Command command = commands.get(index);
 			Button commandButton = new Button(this);
-			commandButton.setText(text);
-			commandButton.setTag(commandNodes.item(index));
+			commandButton.setText(command.getText());
+			commandButton.setTag(command);
 			commandButton.setOnClickListener(this);
 			list.addView(commandButton);
 		}
 		layout.addView(list);
-		}
-		
+
+		// if (position == 0) {
+		// Fragment frag = new SoundSectionFragment();
+		// getSupportFragmentManager().beginTransaction()
+		// .replace(R.id.container, frag).commit();
+		// return true;
+		// }
 		return true;
 	}
 
@@ -188,8 +190,7 @@ public class MainActivity extends FragmentActivity implements
 		@Override
 		public View onCreateView(LayoutInflater inflater, ViewGroup container,
 				Bundle savedInstanceState) {
-			
-			
+
 			View rootView = inflater.inflate(R.layout.fragment_main_dummy,
 					container, false);
 			TextView dummyTextView = (TextView) rootView
@@ -215,24 +216,94 @@ public class MainActivity extends FragmentActivity implements
 
 	}
 
-	NodeList commandNodes;
-	
+	private List<CommandModule> commandModules;
+
+	private class CommandModule {
+		private String name;
+		private ArrayList<Command> commands;
+
+		public String getName() {
+			return name;
+		}
+
+		public List<Command> getCommands() {
+			return commands;
+		}
+
+		public CommandModule(String name) {
+			this.name = name;
+			this.commands = new ArrayList<Command>();
+		}
+	}
+
+	private class Command {
+		private String cmd;
+		private String text;
+
+		public String getCommand() {
+			return cmd;
+		}
+
+		public String getText() {
+			return text;
+		}
+
+		public Command(String cmd, String text) {
+			this.cmd = cmd;
+			this.text = text;
+		}
+	}
+
 	@Override
 	public void DownloadIsComplete(Document doc) {
 		Log.d("mainview", "Download " + doc.toString());
-		commandNodes = doc.getElementsByTagName("command");
-		
-		for(int index = 0; index < commandNodes.getLength(); index++){
-			Log.d("mainview", "Command " + commandNodes.item(index).getChildNodes().item(0).getNodeValue());		
+		NodeList moduleNodes = doc.getElementsByTagName("module");
+		commandModules = new ArrayList<CommandModule>();
+		for (int moduleIndex = 0; moduleIndex < moduleNodes.getLength(); moduleIndex++) {
+			String name = moduleNodes.item(moduleIndex).getAttributes()
+					.getNamedItem("name").getNodeValue();
+			CommandModule module = new CommandModule(name);
+
+			NodeList commands = moduleNodes.item(moduleIndex).getChildNodes();
+			Log.d("mainview", "Create tab for module : " + name + " with "
+					+ commands.getLength() + " commands");
+			for (int commandIndex = 0; commandIndex < commands.getLength(); commandIndex++) {
+				Node commandNode = commands.item(commandIndex);
+				if (commandNode instanceof Element) {
+					Element commandElement = (Element) commandNode;
+					String command = commandElement.getAttributes()
+							.getNamedItem("cmd").getNodeValue();
+					String text = commandElement.getChildNodes().item(0)
+							.getNodeValue();
+					Log.d("mainview", "  Create command : " + command
+							+ ", text " + text);
+					module.getCommands().add(new Command(command, text));
+				}
+			}
+			commandModules.add(module);
 		}
+
+		SetupActionBar();
+	}
+	
+	private void SetupActionBar()
+	{
+		String[] moduleNames = new String[commandModules.size()];
+		for (int index = 0; index < commandModules.size(); index++)
+			moduleNames[index] = commandModules.get(index).getName();
+		final ActionBar actionBar = getActionBar();
+		actionBar.setListNavigationCallbacks(
+				new ArrayAdapter<String>(actionBar.getThemedContext(),
+						android.R.layout.simple_list_item_1,
+						android.R.id.text1, moduleNames), this);
 	}
 
 	@Override
 	public void onClick(View v) {
 		Object tag = v.getTag();
-		if (tag instanceof Node){
-			Node tagNode = (Node) tag;
-			String cmd = tagNode.getAttributes().getNamedItem("cmd").getNodeValue();
+		if (tag instanceof Command) {
+			Command tagNode = (Command) tag;
+			String cmd = tagNode.getCommand();
 			publish(cmd);
 		}
 	}
