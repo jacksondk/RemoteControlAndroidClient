@@ -256,6 +256,9 @@ public class MainActivity extends FragmentActivity implements
 
 	@Override
 	public void DownloadIsComplete(Document doc) {
+		if (doc == null)
+			return;
+		
 		Log.d("mainview", "Download " + doc.toString());
 		NodeList moduleNodes = doc.getElementsByTagName("module");
 		commandModules = new ArrayList<CommandModule>();
