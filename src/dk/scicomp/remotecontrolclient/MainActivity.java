@@ -26,6 +26,7 @@ import org.xml.sax.SAXException;
 import dk.scicomp.remotecontrolclient.DownloadSetup.IDownloadComplete;
 
 import android.app.ActionBar;
+import android.content.Intent;
 import android.os.Bundle;
 
 import android.support.v4.app.Fragment;
@@ -53,6 +54,21 @@ public class MainActivity extends FragmentActivity implements
 	 */
 	private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
 
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.action_settings:
+			showSettings();
+			break;
+		}
+		return true;
+	}
+
+	private void showSettings(){
+		Intent intent = new Intent(this, SettingsActivity.class);
+		startActivity(intent);
+	}
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -173,34 +189,6 @@ public class MainActivity extends FragmentActivity implements
 		return true;
 	}
 
-	/**
-	 * A dummy fragment representing a section of the app, but that simply
-	 * displays dummy text.
-	 */
-	public static class DummySectionFragment extends Fragment {
-		/**
-		 * The fragment argument representing the section number for this
-		 * fragment.
-		 */
-		public static final String ARG_SECTION_NUMBER = "section_number";
-
-		public DummySectionFragment() {
-		}
-
-		@Override
-		public View onCreateView(LayoutInflater inflater, ViewGroup container,
-				Bundle savedInstanceState) {
-
-			View rootView = inflater.inflate(R.layout.fragment_main_dummy,
-					container, false);
-			TextView dummyTextView = (TextView) rootView
-					.findViewById(R.id.section_label);
-			dummyTextView.setText(Integer.toString(getArguments().getInt(
-					ARG_SECTION_NUMBER)));
-			return rootView;
-		}
-	}
-
 	public static class SoundSectionFragment extends Fragment {
 		public SoundSectionFragment() {
 		}
@@ -258,7 +246,7 @@ public class MainActivity extends FragmentActivity implements
 	public void DownloadIsComplete(Document doc) {
 		if (doc == null)
 			return;
-		
+
 		Log.d("mainview", "Download " + doc.toString());
 		NodeList moduleNodes = doc.getElementsByTagName("module");
 		commandModules = new ArrayList<CommandModule>();
@@ -288,9 +276,8 @@ public class MainActivity extends FragmentActivity implements
 
 		SetupActionBar();
 	}
-	
-	private void SetupActionBar()
-	{
+
+	private void SetupActionBar() {
 		String[] moduleNames = new String[commandModules.size()];
 		for (int index = 0; index < commandModules.size(); index++)
 			moduleNames[index] = commandModules.get(index).getName();

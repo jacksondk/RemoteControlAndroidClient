@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <PreferenceCategory android:title="Host">
+        <EditTextPreference
+            android:defaultValue="192.168.0.25"
+            android:key="pref_ip"
+            android:summary="IP of host service"
+            android:title="IP" />
+        <EditTextPreference
+            android:defaultValue="192.168.0.25"
+            android:key="pref_port"
+            android:summary="Port of host service"
+            android:title="Port" />
+    </PreferenceCategory>
+
+</PreferenceScreen>
