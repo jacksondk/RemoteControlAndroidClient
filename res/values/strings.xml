@@ -13,5 +13,6 @@
     <string name="pcSpeakers">PC Speakers</string>
     <string name="digitalOut">Digital Out</string>
     <string name="hdmi">HDMI</string>
+    <string name="reloadSetup">Reload Setup</string>
 
 </resources>

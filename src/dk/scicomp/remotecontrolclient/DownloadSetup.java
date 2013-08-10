@@ -32,7 +32,7 @@ public class DownloadSetup extends AsyncTask<URL, Void, Boolean>{
 	
 	@Override
 	protected Boolean doInBackground(URL... arg0) {
-		
+		Log.d("DownloadSetup", "Starting download");
 		try {
 			String uri =
 				    "http://192.168.0.25:50004/";

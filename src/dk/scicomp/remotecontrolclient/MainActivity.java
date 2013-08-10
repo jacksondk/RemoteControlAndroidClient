@@ -19,12 +19,14 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import dk.scicomp.remotecontrolclient.DownloadSetup.IDownloadComplete;
 
+import android.R.attr;
 import android.app.ActionBar;
 import android.content.Intent;
 import android.os.Bundle;
@@ -39,9 +41,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.GridLayout;
+import android.widget.GridView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -60,44 +65,41 @@ public class MainActivity extends FragmentActivity implements
 		case R.id.action_settings:
 			showSettings();
 			break;
+		case R.id.reload_setup:
+			startLoadSetup();
+			break;
 		}
 		return true;
 	}
 
-	private void showSettings(){
+	private void showSettings() {
 		Intent intent = new Intent(this, SettingsActivity.class);
 		startActivity(intent);
 	}
-	
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
 
+	private void startLoadSetup() {
 		try {
+			setProgressBarIndeterminateVisibility(true);
 			new DownloadSetup(this).execute(new URL[] { new URL(
 					"http://192.168.0.25:50004/") });
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			setProgressBarIndeterminateVisibility(false);
 		}
 
+	}
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		Log.d("main", "Setup");
+		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		setContentView(R.layout.activity_main);
 
-		// Set up the action bar to show a dropdown list.
-		final ActionBar actionBar = getActionBar();
-		actionBar.setDisplayShowTitleEnabled(false);
-		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
-
-		// Set up the dropdown list navigation in the action bar.
-		actionBar.setListNavigationCallbacks(
-		// Specify a SpinnerAdapter to populate the dropdown list.
-				new ArrayAdapter<String>(actionBar.getThemedContext(),
-						android.R.layout.simple_list_item_1,
-						android.R.id.text1, new String[] {
-								getString(R.string.sound),
-								getString(R.string.title_section1),
-								getString(R.string.title_section2),
-								getString(R.string.title_section3), }), this);
+		
+		
+		startLoadSetup();
 	}
 
 	public void sendMessage(View view) {
@@ -137,17 +139,17 @@ public class MainActivity extends FragmentActivity implements
 	@Override
 	public void onRestoreInstanceState(Bundle savedInstanceState) {
 		// Restore the previously serialized current dropdown position.
-		if (savedInstanceState.containsKey(STATE_SELECTED_NAVIGATION_ITEM)) {
-			getActionBar().setSelectedNavigationItem(
-					savedInstanceState.getInt(STATE_SELECTED_NAVIGATION_ITEM));
-		}
+		// if (savedInstanceState.containsKey(STATE_SELECTED_NAVIGATION_ITEM)) {
+		// getActionBar().setSelectedNavigationItem(
+		// savedInstanceState.getInt(STATE_SELECTED_NAVIGATION_ITEM));
+		// }
 	}
 
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
 		// Serialize the current dropdown position.
-		outState.putInt(STATE_SELECTED_NAVIGATION_ITEM, getActionBar()
-				.getSelectedNavigationIndex());
+		// outState.putInt(STATE_SELECTED_NAVIGATION_ITEM, getActionBar()
+		// .getSelectedNavigationIndex());
 	}
 
 	@Override
@@ -166,26 +168,28 @@ public class MainActivity extends FragmentActivity implements
 		CommandModule selectedModule = commandModules.get(position);
 
 		FrameLayout layout = (FrameLayout) findViewById(R.id.container);
-		LinearLayout list = new LinearLayout(this);
+		GridLayout list = new GridLayout(this);
 		layout.removeAllViewsInLayout();
 
+		
 		List<Command> commands = selectedModule.getCommands();
+		list.setColumnCount(selectedModule.getColumns());
+		list.setRowCount(selectedModule.getRows());
 		for (int index = 0; index < commands.size(); index++) {
 			Command command = commands.get(index);
 			Button commandButton = new Button(this);
 			commandButton.setText(command.getText());
 			commandButton.setTag(command);
 			commandButton.setOnClickListener(this);
+			
+			GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+			params.columnSpec = GridLayout.spec(command.getColumn());
+			params.rowSpec = GridLayout.spec(command.getRow());
+			commandButton.setLayoutParams(params);
 			list.addView(commandButton);
 		}
 		layout.addView(list);
-
-		// if (position == 0) {
-		// Fragment frag = new SoundSectionFragment();
-		// getSupportFragmentManager().beginTransaction()
-		// .replace(R.id.container, frag).commit();
-		// return true;
-		// }
+		
 		return true;
 	}
 
@@ -209,17 +213,28 @@ public class MainActivity extends FragmentActivity implements
 	private class CommandModule {
 		private String name;
 		private ArrayList<Command> commands;
+		private int rows;
+		private int columns;
 
 		public String getName() {
 			return name;
+		}
+		public int getRows() {
+			return rows;			
+		}
+		
+		public int getColumns() {
+			return columns;
 		}
 
 		public List<Command> getCommands() {
 			return commands;
 		}
 
-		public CommandModule(String name) {
+		public CommandModule(String name, int rows, int columns) {
 			this.name = name;
+			this.rows = rows;
+			this.columns = columns;
 			this.commands = new ArrayList<Command>();
 		}
 	}
@@ -227,6 +242,8 @@ public class MainActivity extends FragmentActivity implements
 	private class Command {
 		private String cmd;
 		private String text;
+		private int row;
+		private int column;
 
 		public String getCommand() {
 			return cmd;
@@ -235,10 +252,20 @@ public class MainActivity extends FragmentActivity implements
 		public String getText() {
 			return text;
 		}
+		
+		public int getRow() {
+			return row;
+		}
+		
+		public int getColumn() {
+			return column;
+		}
 
-		public Command(String cmd, String text) {
+		public Command(String cmd, String text, int row, int column) {
 			this.cmd = cmd;
 			this.text = text;
+			this.row = row;
+			this.column = column;
 		}
 	}
 
@@ -251,9 +278,12 @@ public class MainActivity extends FragmentActivity implements
 		NodeList moduleNodes = doc.getElementsByTagName("module");
 		commandModules = new ArrayList<CommandModule>();
 		for (int moduleIndex = 0; moduleIndex < moduleNodes.getLength(); moduleIndex++) {
-			String name = moduleNodes.item(moduleIndex).getAttributes()
-					.getNamedItem("name").getNodeValue();
-			CommandModule module = new CommandModule(name);
+			NamedNodeMap attributes = moduleNodes.item(moduleIndex).getAttributes();
+			String name = attributes.getNamedItem("name").getNodeValue();
+			int rows = Integer.parseInt( attributes.getNamedItem("rows").getNodeValue());
+			int columns = Integer.parseInt(attributes.getNamedItem("columns").getNodeValue());
+			
+			CommandModule module = new CommandModule(name,rows,columns);
 
 			NodeList commands = moduleNodes.item(moduleIndex).getChildNodes();
 			Log.d("mainview", "Create tab for module : " + name + " with "
@@ -262,19 +292,24 @@ public class MainActivity extends FragmentActivity implements
 				Node commandNode = commands.item(commandIndex);
 				if (commandNode instanceof Element) {
 					Element commandElement = (Element) commandNode;
-					String command = commandElement.getAttributes()
-							.getNamedItem("cmd").getNodeValue();
+					NamedNodeMap commandAttributes = commandElement.getAttributes();
+					String command = commandAttributes.getNamedItem("cmd").getNodeValue();
+					int row = Integer.parseInt(commandAttributes.getNamedItem("row").getNodeValue());
+					int column = Integer.parseInt(commandAttributes.getNamedItem("column").getNodeValue());
+					
 					String text = commandElement.getChildNodes().item(0)
 							.getNodeValue();
 					Log.d("mainview", "  Create command : " + command
 							+ ", text " + text);
-					module.getCommands().add(new Command(command, text));
+					module.getCommands().add(new Command(command, text, row, column));
 				}
 			}
 			commandModules.add(module);
 		}
 
 		SetupActionBar();
+		setProgressBarIndeterminateVisibility(false);
+
 	}
 
 	private void SetupActionBar() {
@@ -282,6 +317,7 @@ public class MainActivity extends FragmentActivity implements
 		for (int index = 0; index < commandModules.size(); index++)
 			moduleNames[index] = commandModules.get(index).getName();
 		final ActionBar actionBar = getActionBar();
+		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
 		actionBar.setListNavigationCallbacks(
 				new ArrayAdapter<String>(actionBar.getThemedContext(),
 						android.R.layout.simple_list_item_1,
